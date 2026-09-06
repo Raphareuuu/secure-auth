@@ -21,3 +21,12 @@ SessionLocal = sessionmaker(
 #será a classe-base dos nossos modelos.
 class Base(DeclarativeBase):
     pass
+
+#Essa função será responsável por fornecer uma conexão/sessão com o banco para cada requisição.
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
