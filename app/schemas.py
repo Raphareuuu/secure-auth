@@ -14,3 +14,7 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     created_at: datetime
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str

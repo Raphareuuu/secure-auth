@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..auth import hash_password
+from ..auth import hash_password, verify_password
 from ..database import get_db
 from ..models import User
-from ..schemas import RegisterRequest, UserResponse
+from ..schemas import RegisterRequest, UserResponse, LoginRequest
 
 router = APIRouter(
     prefix="/auth",
@@ -41,3 +42,38 @@ def register(
     db.refresh(user)
 
     return user
+
+@router.post("/login")
+def login(
+    user_data: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    result = db.execute(
+        select(User).where(User.email == user_data.email)
+    )
+
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="E-mail ou senha inválidos"
+        )
+
+    password_is_valid = verify_password(
+        user_data.password,
+        user.password_hash
+    )
+
+    if not password_is_valid:
+        raise HTTPException(
+            status_code=401,
+            detail="E-mail ou senha inválidos"
+        )
+
+    return{
+        "message": "Login realizado com sucesso!",
+        "user_id": user.id,
+        "name": user.name,
+        "email": user.email
+    }
